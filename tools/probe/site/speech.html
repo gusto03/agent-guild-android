@@ -1,0 +1,36 @@
+<!doctype html>
+<html><head><meta charset="utf-8"></head><body>
+<script>
+  const scenario = location.hash.slice(1);
+  const R = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const t0 = performance.now();
+  const make = (name) => {
+    const r = new R();
+    r.lang = 'en-US';
+    r.interimResults = true;
+    for (const ev of ['start', 'audiostart', 'end']) r.addEventListener(ev, () => console.log(`${scenario} ${name} ${ev} +${Math.round(performance.now() - t0)}ms`));
+    r.addEventListener('error', (e) => console.log(`${scenario} ${name} error=${e.error} +${Math.round(performance.now() - t0)}ms`));
+    return r;
+  };
+  if (scenario === 'cancel-early') {
+    const r = make('r'); r.start(); r.abort();
+  } else if (scenario === 'cancel-listening') {
+    const r = make('r'); r.addEventListener('audiostart', () => r.abort()); r.start();
+  } else if (scenario === 'busy') {
+    const a = make('a'), b = make('b'); a.start(); b.start();
+  } else if (scenario === 'restart') {
+    // The page's Android retry: a new recognizer 250 ms after the last one ended.
+    const a = make('a');
+    a.addEventListener('end', () => setTimeout(() => make('b').start(), 250));
+    a.addEventListener('audiostart', () => a.stop());
+    a.start();
+  } else if (scenario === 'restart-now') {
+    const a = make('a');
+    a.addEventListener('end', () => make('b').start());
+    a.addEventListener('audiostart', () => a.stop());
+    a.start();
+  } else {
+    make('r').start();
+  }
+</script>
+</body></html>

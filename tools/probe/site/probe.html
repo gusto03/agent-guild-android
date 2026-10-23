@@ -1,0 +1,34 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<script>
+  // Runs before anything else, as theme.js does in the page's head.
+  console.log('head agentGuild=' + typeof window.agentGuild + ' postMessage=' + typeof (window.agentGuild && window.agentGuild.postMessage));
+</script>
+</head><body>
+<script>
+  const log = (s) => console.log(s);
+  log('SpeechRecognition=' + typeof window.SpeechRecognition + ' webkitSpeechRecognition=' + typeof window.webkitSpeechRecognition);
+  log('speechSynthesis=' + typeof window.speechSynthesis + ' Utterance=' + typeof window.SpeechSynthesisUtterance);
+  const gl = document.createElement('canvas').getContext('webgl2');
+  if (gl) {
+    const info = gl.getExtension('WEBGL_debug_renderer_info');
+    log('webgl2=yes renderer=' + (info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)) + ' maxTexture=' + gl.getParameter(gl.MAX_TEXTURE_SIZE));
+  } else log('webgl2=no');
+  try {
+    window.agentGuild.postMessage(JSON.stringify({ source: 'agent-guild', type: 'ready', version: 'probe' }));
+  } catch (e) { log('post failed ' + e); }
+  try {
+    window.agentGuild.postMessage({ source: 'agent-guild', type: 'ready' });
+    log('object post accepted');
+  } catch (e) { log('object post refused: ' + e.name); }
+  const R = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (R) {
+    const r = new R();
+    r.lang = 'en-US';
+    for (const ev of ['start', 'audiostart', 'soundstart', 'speechstart', 'result', 'nomatch', 'end']) r.addEventListener(ev, () => log('recognition ' + ev));
+    r.addEventListener('error', (e) => log('recognition error ' + e.error + ' ' + (e.message || '')));
+    try { r.start(); log('recognition start() returned'); } catch (e) { log('recognition start threw ' + e); }
+  }
+  if (window.speechSynthesis) log('voices=' + speechSynthesis.getVoices().length);
+</script>
+</body></html>
